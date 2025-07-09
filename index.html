@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PDF to JPG Converter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+  <!-- Header/Navbar -->
+  <header class="bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="text-xl font-bold text-white">PDF to JPG</div>
+      <nav class="hidden md:flex gap-6 text-sm font-medium">
+        <a href="#features" class="hover:text-blue-300">Features</a>
+        <a href="#images" class="hover:text-blue-300">Gallery</a>
+        <a href="#footer" class="hover:text-blue-300">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-br from-blue-600 to-indigo-600 text-white py-20 px-6 text-center">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-5xl font-extrabold mb-4">Convert PDF to JPG Instantly</h1>
+      <p class="text-lg mb-8">Upload your PDF and get high-quality JPGs of every page in seconds. No login, no watermark, 100% free.</p>
+      <label for="pdf-upload" class="inline-flex items-center px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg shadow hover:bg-blue-50 transition-all cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13H5.5z" />
+          <path d="M9 13h2v5a1 1 0 11-2 0v-5z" />
+        </svg>
+        Select PDF to Convert
+        <input type="file" id="pdf-upload" accept="application/pdf" class="hidden" />
+      </label>
+      <p id="loading" class="mt-4 text-sm hidden animate-pulse">Rendering pages, please wait...</p>
+
+     
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-3 gap-10 text-center">
+      <div>
+        <div class="text-4xl mb-2">⚡</div>
+        <h3 class="text-xl font-semibold mb-2">Fast & Free</h3>
+        <p>Instant conversion without registration. 100% free and unlimited.</p>
+      </div>
+      <div>
+        <div class="text-4xl mb-2">🎯</div>
+        <h3 class="text-xl font-semibold mb-2">High Quality</h3>
+        <p>Each PDF page is converted to a crisp, high-resolution JPG.</p>
+      </div>
+      <div>
+        <div class="text-4xl mb-2">🔒</div>
+        <h3 class="text-xl font-semibold mb-2">Secure</h3>
+        <p>Everything runs in your browser. Files are never uploaded anywhere.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Image Output Section -->
+  <section id="images" class="py-12 bg-gray-100 scroll-mt-24">
+    <div class="max-w-5xl mx-auto px-4">
+      <h2 class="text-3xl font-bold mb-8 text-center">Your Converted Images</h2>
+      <div id="images-container" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer id="footer" class="bg-white border-t text-center text-sm text-gray-500 py-6">
+    © 2025 PDF to JPG Converter. All rights reserved.
+  </footer>
+
+  <!-- Script -->
+  <script>
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    document.getElementById('pdf-upload').addEventListener('change', async function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const loadingText = document.getElementById('loading');
+      const imagesContainer = document.getElementById('images-container');
+
+      imagesContainer.innerHTML = '';
+      loadingText.classList.remove('hidden');
+
+      const fileReader = new FileReader();
+      fileReader.onload = async function () {
+        const typedarray = new Uint8Array(this.result);
+        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const viewport = page.getViewport({ scale: 2 });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+          const jpgDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'bg-white p-3 rounded-lg shadow-md';
+
+          const img = document.createElement('img');
+          img.src = jpgDataUrl;
+          img.alt = `Page ${pageNum}`;
+          img.className = 'rounded w-full h-auto';
+
+          const link = document.createElement('a');
+          link.href = jpgDataUrl;
+          link.download = `page-${pageNum}.jpg`;
+          link.textContent = `⬇ Download Page ${pageNum}`;
+          link.className = 'block mt-2 text-blue-600 hover:underline text-sm';
+
+          wrapper.appendChild(img);
+          wrapper.appendChild(link);
+          imagesContainer.appendChild(wrapper);
+        }
+
+        loadingText.classList.add('hidden');
+
+        // Smooth scroll to output section
+        document.getElementById('images').scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      };
+
+      fileReader.readAsArrayBuffer(file);
+    });
+  </script>
+</body>
+</html>
